@@ -5,15 +5,9 @@ let poseArr = [];
 
 function setup() {
    createCanvas(640, 480);
-   video = createCapture(VIDEO).size(width, height);
-   video.hide();
+   video = createCapture(VIDEO).size(width, height).hide();
 
-   poseNet = ml5.poseNet(video, () => console.log('model loaded, poseNet is ready'));
-   poseNet.on('pose', poses => {
-      if (poses.length > 0) {
-         poseArr = poses;
-      }
-   });
+   setupPoseNet();
 }
 
 function draw() {
@@ -26,9 +20,21 @@ function draw() {
    drawPoints();
 }
 
+///////////////////////////
+
+function setupPoseNet() {
+   poseNet = ml5.poseNet(video, () => console.log('model loaded, poseNet is ready'));
+
+   poseNet.on('pose', poses => {
+      if (poses.length) {
+         poseArr = poses;
+      }
+   });
+}
+
 function drawPoints() {
    poseArr.forEach(({ pose }) => {
-      console.log(pose);
+      // console.log(pose);
 
       pose && pose.keypoints.forEach(point => {
          if (point && point.score > 0.9) {
