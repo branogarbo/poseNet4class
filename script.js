@@ -1,39 +1,40 @@
 let video;
 let poseNet;
-let pose;
 let vidRes;
-
-function modelLoaded() {
-   console.log('poseNet is ready');
-}
-function gotPoses(poses) {
-   console.log(poses);
-
-   if (poses.length > 0) {
-      pose = poses[0].pose;
-   }
-}
+let poseArr = [];
 
 function setup() {
-   createCanvas(windowWidth, windowHeight);
-   video = createCapture(VIDEO).size(900, AUTO);
-   vidRes = video.size();
+   createCanvas(640, 480);
+   video = createCapture(VIDEO).size(width, height);
    video.hide();
 
-   poseNet = ml5.poseNet(video, modelLoaded);
-   poseNet.on('pose', gotPoses);
-
+   poseNet = ml5.poseNet(video, () => console.log('model loaded, poseNet is ready'));
+   poseNet.on('pose', poses => {
+      if (poses.length > 0) {
+         poseArr = poses;
+      }
+   });
 }
 
 function draw() {
    background(10);
-   image(video, 0, 0, vidRes.width, vidRes.height);
-
-   fill(255);
+   scale(-1,1);
+   translate(-width,0);
    
-   for (poseNode in pose) {
-      if (pose && poseNode !== "keypoints" && pose[poseNode].confidence > 0.9) {
-         circle(pose[poseNode].x, pose[poseNode].y, 10);
-      }
-   }
+   image(video, 0, 0, width, height);
+   
+   drawPoints();
+}
+
+function drawPoints() {
+   poseArr.forEach(({ pose }) => {
+      console.log(pose);
+
+      pose && pose.keypoints.forEach(point => {
+         if (point && point.score > 0.9) {
+            circle(point.position.x, point.position.y, 10);
+         }
+      });
+
+   });
 }
