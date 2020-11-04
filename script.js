@@ -32,7 +32,7 @@ function draw() {
 // applies inital transformations and controls loading message 
 function setupCanvas() {
    clear();
-   
+
    if (isLoading) {
       textAlign(CENTER, CENTER);
       textSize(30);
@@ -63,9 +63,9 @@ function drawPose(vidHeight) {
    
    // supports multiple poses in an image
    poseArr.forEach(({ pose }) => {
-      pose && pose.keypoints.forEach(point => {
-         if (point && point.score > 0.7) {
-            circle(point.position.x*imageScaleFactor, point.position.y*imageScaleFactor, 10);
+      pose && pose.keypoints.forEach(({ position, score }) => {
+         if (score > 0.7) {
+            circle(position.x*imageScaleFactor, position.y*imageScaleFactor, 10);
          }
       });
    });
