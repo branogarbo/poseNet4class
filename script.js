@@ -1,46 +1,72 @@
 let video;
 let poseNet;
-let vidRes;
 let poseArr = [];
+let baseRes = [640, 480];
+let isLoading = true;
+
+// returns image resolution similar to the base resolution according to the height you pass in
+function calcRes(height) {
+   let scaleFactor = height/baseRes[1];
+   let newRes = [baseRes[0]*scaleFactor, height];
+
+   return newRes;
+}
+
+//////////////////////////////////////////////////////////////
 
 function setup() {
-   createCanvas(640, 480);
-   video = createCapture(VIDEO).size(width, height).hide();
-
+   createCanvas(windowWidth, windowHeight);
+   video = createCapture(VIDEO).size(...baseRes).hide();
+   
    setupPoseNet();
 }
 
 function draw() {
-   background(10);
+   setupCanvas();
+   
+   drawPose(height);
+}
+
+//////////////////////////////////////////////////////////////
+
+// applies inital transformations and controls loading message 
+function setupCanvas() {
+   clear();
+   
+   if (isLoading) {
+      textAlign(CENTER, CENTER);
+      textSize(30);
+      text('Loading...', width/2, height/2);
+   }
+
+   // flip canvas horizontally
    scale(-1,1);
    translate(-width,0);
-   
-   image(video, 0, 0, width, height);
-   
-   drawPoints();
 }
 
-///////////////////////////
-
+// loading poseNet model, poseNet listens for the "pose" event
 function setupPoseNet() {
-   poseNet = ml5.poseNet(video, () => console.log('model loaded, poseNet is ready'));
-
-   poseNet.on('pose', poses => {
-      if (poses.length) {
-         poseArr = poses;
-      }
+   poseNet = ml5.poseNet(video, () => {
+      isLoading = false;
+      console.log('model loaded, poseNet is ready');
    });
+
+   poseNet.on('pose', poses => poses.length && (poseArr = poses));
 }
 
-function drawPoints() {
+// draws image and points over it
+function drawPose(vidHeight) {
+   let imageScaleFactor = vidHeight/baseRes[1];
+   
+   translate(width/2 - calcRes(vidHeight)[0]/2, height/2 - vidHeight/2); // centers image and points
+   image(video, 0, 0, ...calcRes(vidHeight));
+   
+   // supports multiple poses in an image
    poseArr.forEach(({ pose }) => {
-      // console.log(pose);
-
       pose && pose.keypoints.forEach(point => {
-         if (point && point.score > 0.9) {
-            circle(point.position.x, point.position.y, 10);
+         if (point && point.score > 0.7) {
+            circle(point.position.x*imageScaleFactor, point.position.y*imageScaleFactor, 10);
          }
       });
-
    });
 }
