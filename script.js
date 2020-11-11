@@ -23,7 +23,7 @@ function setup() {
 
 function draw() {
    setupCanvas();
-   drawPose(height);
+   drawPoses(height);
 }
 
 //////////////////////////////////////////////////////////////
@@ -34,10 +34,12 @@ function setupCanvas() {
    noStroke();
 
    if (isLoading) {
+      push();
       textAlign(CENTER, CENTER);
       textSize(30);
       fill(255);
       text('Loading...', width/2, height/2);
+      pop();
    }
 
    // flip canvas horizontally
@@ -56,7 +58,7 @@ function setupPoseNet() {
 }
 
 // draws image and points over it
-function drawPose(vidHeight) {
+function drawPoses(vidHeight) {
    let minConfidence = 0.2;
    let imageScaleFactor = vidHeight/baseRes[1];
    
@@ -64,47 +66,26 @@ function drawPose(vidHeight) {
    image(video, 0, 0, ...calcRes(vidHeight));
    
    // supports multiple poses in an image
-   poseArr.length && poseArr.forEach(({ pose }) => {
-      pose.keypoints.forEach(({ position, score }) => {
-         if (score > minConfidence) {
-            circle(position.x*imageScaleFactor, position.y*imageScaleFactor, 10);
-         }
+   poseArr.length && poseArr.forEach(item => {
+      let { pose, skeleton } = item;
+      
+      skeleton.forEach(link => {
+         push();
+         strokeWeight(5);
+         stroke(255);
+         line(link[0].position.x*imageScaleFactor, link[0].position.y*imageScaleFactor, link[1].position.x*imageScaleFactor, link[1].position.y*imageScaleFactor);
+         pop();
       });
 
-      function connectParts(part1, part2) {
-          if (pose[part1].confidence > minConfidence && pose[part2].confidence > minConfidence) {
-             line(pose[part1].x*imageScaleFactor, pose[part1].y*imageScaleFactor, pose[part2].x*imageScaleFactor, pose[part2].y*imageScaleFactor);
-          }
-      }
+      pose.keypoints.forEach(({ position, score }) => {
+         if (score > minConfidence) {
+            push();
+            fill(100,100,255);
+            circle(position.x*imageScaleFactor, position.y*imageScaleFactor, 15);
+            pop();
+         }
 
-      // pose skeleton
-      push();
+      });
 
-      stroke(255);
-      strokeWeight(5);
-
-      // body outline
-      connectParts('leftShoulder', 'rightShoulder');
-      connectParts('rightShoulder', 'rightHip');
-      connectParts('rightHip', 'leftHip');
-      connectParts('leftHip', 'leftShoulder');
-
-      // left arm
-      connectParts('leftShoulder', 'leftElbow');
-      connectParts('leftElbow', 'leftWrist');
-
-      // right arm
-      connectParts('rightShoulder', 'rightElbow');
-      connectParts('rightElbow', 'rightWrist');
-
-      // left leg
-      connectParts('leftHip', 'leftKnee');
-      connectParts('leftKnee', 'leftAnkle');
-      
-      // right leg
-      connectParts('rightHip', 'rightKnee');
-      connectParts('rightKnee', 'rightAnkle');
-
-      pop();
    });
 }
